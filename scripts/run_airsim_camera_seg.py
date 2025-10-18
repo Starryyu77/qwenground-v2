@@ -103,6 +103,16 @@ def run(dataset_root: str,
     img = Image.open(image_path).convert("RGB")
     w, h = img.size
 
+    # 构造更严格的提示，加入图像尺寸与坐标约束，避免仅框局部
+    final_prompt = (
+        f"{prompt}\n"
+        f"图像尺寸：宽 {w} 像素，高 {h} 像素。"
+        f"请输出该目标的完整 2D 边界框，bbox=[x1,y1,x2,y2]；坐标为整数，满足 0<=x1<x2<= {w-1}，0<=y1<y2<= {h-1}。"
+        "边界框需要尽量覆盖整个车辆外轮廓，不要只框局部或边角。"
+        "若不存在该目标，请仅输出 JSON：{{\"bbox\": [0,0,0,0], \"label\": \"none\"}}。"
+        "不要输出除 JSON 以外的任何字符。"
+    )
+
     # 加载相机内参（用于记录/调试）
     K_map = load_camera_intrinsic(dataset_root)
     K = K_map.get(sample["calibrated_sensor_token"])  # 3x3
@@ -125,7 +135,7 @@ def run(dataset_root: str,
             n_gpu_layers=n_gpu_layers,
             verbose=False,
         )
-    det = detector.detect(image_path, prompt)
+    det = detector.detect(image_path, final_prompt)
     bbox = det["bbox"]
     # 边界裁剪，确保坐标合法
     def _clamp_bbox(b: Any, w: int, h: int) -> List[int]:
@@ -140,6 +150,28 @@ def run(dataset_root: str,
             y1, y2 = y2, y1
         return [x1, y1, x2, y2]
     bbox = _clamp_bbox(bbox, w, h)
+
+    # 小框重试逻辑：若面积过小或宽高过小，强化提示重试一次
+    def _area(b: List[int]) -> int:
+        return max(0, b[2] - b[0]) * max(0, b[3] - b[1])
+    min_area = int(w * h * 0.003)  # 至少覆盖约 0.3% 图像面积
+    if _area(bbox) < min_area or (bbox[2] - bbox[0]) < 16 or (bbox[3] - bbox[1]) < 16:
+        retry_prompt = (
+            f"{prompt}\n"
+            f"图像尺寸：宽 {w} 像素，高 {h} 像素。"
+            f"请输出该目标（例如最右侧的车辆）的完整 2D 边界框，bbox=[x1,y1,x2,y2]；坐标为整数，满足 0<=x1<x2<= {w-1}，0<=y1<y2<= {h-1}。"
+            "务必覆盖完整车身，不要只框局部或边角；框的宽和高至少分别不小于 30 像素。"
+            "若不存在该目标，请仅输出 JSON：{\"bbox\": [0,0,0,0], \"label\": \"none\"}。"
+            "不要输出除 JSON 以外的任何字符。"
+        )
+        det_retry = detector.detect(image_path, retry_prompt)
+        bbox_retry = _clamp_bbox(det_retry.get("bbox", bbox), w, h)
+        # 若重试框面积更大，则采用重试结果
+        if _area(bbox_retry) > _area(bbox):
+            bbox = bbox_retry
+            det = det_retry
+            print("检测到初次框过小，已重试并采用更合理的框。")
+
     print(f"2D bbox: {bbox}, label: {det.get('label')}")
 
     # 保存可视化与 JSON

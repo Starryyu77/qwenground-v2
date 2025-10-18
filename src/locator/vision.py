@@ -253,6 +253,7 @@ class VLLMOpenAI2DDetector:
                 messages=messages,
                 temperature=0.0,
                 max_tokens=max_tokens,
+                response_format={"type": "json_object"},
             )
             # vLLM OpenAI 接口通常返回字符串 content
             content = resp.choices[0].message.content if resp and resp.choices else None
