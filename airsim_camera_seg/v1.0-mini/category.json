@@ -1,0 +1,107 @@
+[
+ {
+  "token": "73958beb04a9471093c9f2dbf089cb2c",
+  "name": "vehicle.mini.cooperst",
+  "description": "vehicle.mini.cooperst"
+ },
+ {
+  "token": "dbc559392354446b8940a46d7b678680",
+  "name": "vehicle.toyota.prius",
+  "description": "vehicle.toyota.prius"
+ },
+ {
+  "token": "139987791a034b7dae8761dc1cc8522b",
+  "name": "vehicle.charger2020.charger2020",
+  "description": "vehicle.charger2020.charger2020"
+ },
+ {
+  "token": "3a205b9ca40a440191a629fb6b54b4b6",
+  "name": "vehicle.tesla.model3",
+  "description": "vehicle.tesla.model3"
+ },
+ {
+  "token": "5124c3a380864b5cbc7b3a2ff528f534",
+  "name": "vehicle.bmw.grandtourer",
+  "description": "vehicle.bmw.grandtourer"
+ },
+ {
+  "token": "1ceeb828f4774b7c97ecff70972870f4",
+  "name": "vehicle.dodge_charger.police",
+  "description": "vehicle.dodge_charger.police"
+ },
+ {
+  "token": "a3fab3dc13314ff2a4a592b490c8b11c",
+  "name": "vehicle.nissan.patrol",
+  "description": "vehicle.nissan.patrol"
+ },
+ {
+  "token": "d2a271e686f648f58333aa9dd0eb0322",
+  "name": "vehicle.seat.leon",
+  "description": "vehicle.seat.leon"
+ },
+ {
+  "token": "76c8c0ca0d9c45c5aef9619b50edb1cc",
+  "name": "vehicle.jeep.wrangler_rubicon",
+  "description": "vehicle.jeep.wrangler_rubicon"
+ },
+ {
+  "token": "0985f55557d642009b2b16afa0b5928f",
+  "name": "vehicle.chevrolet.impala",
+  "description": "vehicle.chevrolet.impala"
+ },
+ {
+  "token": "ca9cff5657c942219efbe284c4970942",
+  "name": "vehicle.audi.tt",
+  "description": "vehicle.audi.tt"
+ },
+ {
+  "token": "cb2fa3b44c4040d3879a8179b767a39b",
+  "name": "vehicle.mercedes-benz.coupe",
+  "description": "vehicle.mercedes-benz.coupe"
+ },
+ {
+  "token": "7e1253e98de24f438e62f5fff72db2d8",
+  "name": "vehicle.lincoln2020.mkz2020",
+  "description": "vehicle.lincoln2020.mkz2020"
+ },
+ {
+  "token": "b57732013471458398b8be4f1c80084f",
+  "name": "vehicle.lincoln.mkz2017",
+  "description": "vehicle.lincoln.mkz2017"
+ },
+ {
+  "token": "9d97d5f9cb0542628ea5cf771411ec49",
+  "name": "vehicle.nissan.micra",
+  "description": "vehicle.nissan.micra"
+ },
+ {
+  "token": "311aee7d18d345158c55b60149a4a7db",
+  "name": "vehicle.audi.a2",
+  "description": "vehicle.audi.a2"
+ },
+ {
+  "token": "16f5301b097a4706bf53a740d62660b3",
+  "name": "vehicle.audi.etron",
+  "description": "vehicle.audi.etron"
+ },
+ {
+  "token": "1b450f7d390f4826a27ad67e52af36b5",
+  "name": "vehicle.citroen.c3",
+  "description": "vehicle.citroen.c3"
+ },
+ {
+  "token": "98bc5933ea13415d80abbcfada21a287",
+  "name": "vehicle.mustang.mustang",
+  "description": "vehicle.mustang.mustang"
+ },
+ {
+  "token": "0c2442f45ccd440f9918f4329de9ebfd",
+  "name": "vehicle.mercedesccc.mercedesccc",
+  "description": "vehicle.mercedesccc.mercedesccc"
+ },
+ {
+  "token": "e29bc50898af4d3aa33c64a21b69ed8d",
+  "name": "vehicle.chargercop2020.chargercop2020",
+  "description": "vehicle.chargercop2020.chargercop2020"
+ }
+]

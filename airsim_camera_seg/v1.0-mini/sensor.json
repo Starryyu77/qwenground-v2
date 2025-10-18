@@ -1,0 +1,152 @@
+[
+ {
+  "token": "eaf85517abe34feb8eb7f389255b9fff",
+  "channel": "CAM_FRONT_id_0",
+  "modality": "camera"
+ },
+ {
+  "token": "d727296245144251a8b2498aee137314",
+  "channel": "CAM_BACK_id_0",
+  "modality": "camera"
+ },
+ {
+  "token": "4ed7b5598fdd4841858946746aa6af62",
+  "channel": "CAM_LEFT_id_0",
+  "modality": "camera"
+ },
+ {
+  "token": "b2bbf1764cc2477ca3da6a54ed5f62c5",
+  "channel": "CAM_RIGHT_id_0",
+  "modality": "camera"
+ },
+ {
+  "token": "32fc361666f448adb125b05e7190a935",
+  "channel": "CAM_BOTTOM_id_0",
+  "modality": "camera"
+ },
+ {
+  "token": "35d581c93f2d45bc990d67465a1172c9",
+  "channel": "LIDAR_TOP_id_0",
+  "modality": "lidar"
+ },
+ {
+  "token": "412c85b64b6a4285905cdca7990ee3dc",
+  "channel": "CAM_FRONT_id_1",
+  "modality": "camera"
+ },
+ {
+  "token": "4fb60e0f923742e484024e41e12a4607",
+  "channel": "CAM_BACK_id_1",
+  "modality": "camera"
+ },
+ {
+  "token": "0530913bebb54c5bb0226eb3845febf0",
+  "channel": "CAM_LEFT_id_1",
+  "modality": "camera"
+ },
+ {
+  "token": "915e07cb0332412f9d5fff0ae6a238e5",
+  "channel": "CAM_RIGHT_id_1",
+  "modality": "camera"
+ },
+ {
+  "token": "7078232a4d3b4083bd062605346f9368",
+  "channel": "CAM_BOTTOM_id_1",
+  "modality": "camera"
+ },
+ {
+  "token": "c3258f8b6f384ac18ab786ac6eb37a69",
+  "channel": "LIDAR_TOP_id_1",
+  "modality": "lidar"
+ },
+ {
+  "token": "0e748f2525074c1b89f344f2859b33b7",
+  "channel": "CAM_FRONT_id_2",
+  "modality": "camera"
+ },
+ {
+  "token": "5c05b5f82a6b42498d6fea6c10f40ede",
+  "channel": "CAM_BACK_id_2",
+  "modality": "camera"
+ },
+ {
+  "token": "4c26e08daca34d7cb26c7caeeeb14635",
+  "channel": "CAM_LEFT_id_2",
+  "modality": "camera"
+ },
+ {
+  "token": "d450659d132e46949cbca9e9d0df4e9e",
+  "channel": "CAM_RIGHT_id_2",
+  "modality": "camera"
+ },
+ {
+  "token": "b6536056305648349ec7dd402bcfdb6a",
+  "channel": "CAM_BOTTOM_id_2",
+  "modality": "camera"
+ },
+ {
+  "token": "16b6ad2b42be47cca6be23c22852663e",
+  "channel": "LIDAR_TOP_id_2",
+  "modality": "lidar"
+ },
+ {
+  "token": "927cbaf0e8b247f0a6ccb3c7d80a2ed9",
+  "channel": "CAM_FRONT_id_3",
+  "modality": "camera"
+ },
+ {
+  "token": "76f9e919aa12474eb4039d8dcf9cddd2",
+  "channel": "CAM_BACK_id_3",
+  "modality": "camera"
+ },
+ {
+  "token": "d5964048d9c64d108430552cead69305",
+  "channel": "CAM_LEFT_id_3",
+  "modality": "camera"
+ },
+ {
+  "token": "bf036760422b4f2dbaff2522043c1a6d",
+  "channel": "CAM_RIGHT_id_3",
+  "modality": "camera"
+ },
+ {
+  "token": "5d03bdbc4bc44caaa77ca4658953c5f6",
+  "channel": "CAM_BOTTOM_id_3",
+  "modality": "camera"
+ },
+ {
+  "token": "34823ff00e5c4dd4a8638d18cd17fff0",
+  "channel": "LIDAR_TOP_id_3",
+  "modality": "lidar"
+ },
+ {
+  "token": "210c0c26186046ff8de6c68b12ee04a4",
+  "channel": "CAM_FRONT_id_4",
+  "modality": "camera"
+ },
+ {
+  "token": "a057f03bf8eb4c7aaec977901de08449",
+  "channel": "CAM_BACK_id_4",
+  "modality": "camera"
+ },
+ {
+  "token": "26bbc81eb7d742b8b4ad1ee6d6da764b",
+  "channel": "CAM_LEFT_id_4",
+  "modality": "camera"
+ },
+ {
+  "token": "cc744bf04b094051b2e71c5d0cb2c9cd",
+  "channel": "CAM_RIGHT_id_4",
+  "modality": "camera"
+ },
+ {
+  "token": "a0e1a02d05a3429e9a03bb0d7cab1d07",
+  "channel": "CAM_BOTTOM_id_4",
+  "modality": "camera"
+ },
+ {
+  "token": "5b05afd940704dbb84be977c83fe887f",
+  "channel": "LIDAR_TOP_id_4",
+  "modality": "lidar"
+ }
+]

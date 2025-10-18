@@ -1,0 +1,12 @@
+[
+  {
+    "image_path": "sample_data/image.png",
+    "pointcloud_path": "sample_data/pointcloud.pcd",
+    "camera_path": "sample_data/camera.yaml",
+    "prompt": "最左边的汽车",
+    "output_dir": "outputs/task_1",
+    "bbox_json": "sample_data/bbox_hint.json",
+    "n_ctx": 4096,
+    "n_gpu_layers": 1
+  }
+]

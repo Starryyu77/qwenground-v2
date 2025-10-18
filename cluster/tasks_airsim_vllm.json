@@ -1,0 +1,20 @@
+[
+  {
+    "dataset_root": "airsim_camera_seg",
+    "channel": "CAM_FRONT_id_0",
+    "index": 0,
+    "prompt": "画面中最左侧的汽车",
+    "use_vllm": true,
+    "vllm_model": "Qwen/Qwen2-VL-7B-Instruct",
+    "output_dir": "outputs/airsim_front_leftmost_vllm_0"
+  },
+  {
+    "dataset_root": "airsim_camera_seg",
+    "channel": "CAM_RIGHT_id_0",
+    "index": 0,
+    "prompt": "画面中最左侧的汽车",
+    "use_vllm": true,
+    "vllm_model": "Qwen/Qwen2-VL-7B-Instruct",
+    "output_dir": "outputs/airsim_right_leftmost_vllm_0"
+  }
+]

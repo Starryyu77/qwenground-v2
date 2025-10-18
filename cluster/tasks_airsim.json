@@ -1,0 +1,18 @@
+[
+  {
+    "dataset_root": "airsim_camera_seg",
+    "channel": "CAM_FRONT_id_0",
+    "index": 0,
+    "prompt": "最左边的汽车",
+    "use_api": true,
+    "output_dir": "outputs/airsim_front_0"
+  },
+  {
+    "dataset_root": "airsim_camera_seg",
+    "channel": "CAM_RIGHT_id_0",
+    "index": 0,
+    "prompt": "道路右侧的白车",
+    "use_api": true,
+    "output_dir": "outputs/airsim_right_0"
+  }
+]
