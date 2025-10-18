@@ -110,13 +110,20 @@ def run(dataset_root: str,
     # 若启用 YOLO 助手：先生成车类候选
     candidates: List[Dict[str, Any]] = []
     if yolo_assist:
-        yolo = YOLOCandidateDetector(model_name=os.environ.get("YOLO_MODEL", "yolov8n.pt"), conf=float(os.environ.get("YOLO_CONF", 0.25)), iou=float(os.environ.get("YOLO_IOU", 0.45)))
+        yolo = YOLOCandidateDetector(
+            model_name=os.environ.get("YOLO_MODEL", "yolov8n.pt"),
+            conf=float(os.environ.get("YOLO_CONF", 0.25)),
+            iou=float(os.environ.get("YOLO_IOU", 0.45)),
+            device=os.environ.get("YOLO_DEVICE")
+        )
         candidates = yolo.detect_cars(image_path)
         # 基于宽高/面积过滤过小框（严格按你的要求：不做兜底，若无有效候选则直接失败）
         def _area(b: List[int]) -> int:
             return max(0, b[2] - b[0]) * max(0, b[3] - b[1])
-        min_w, min_h = 24, 24
-        min_area = int(w * h * 0.003)
+        min_w = int(os.environ.get("YOLO_MIN_W", 24))
+        min_h = int(os.environ.get("YOLO_MIN_H", 24))
+        min_area_ratio = float(os.environ.get("YOLO_MIN_AREA_RATIO", 0.003))
+        min_area = int(w * h * min_area_ratio)
         filtered = []
         for c in candidates:
             bw = c["bbox"][2] - c["bbox"][0]

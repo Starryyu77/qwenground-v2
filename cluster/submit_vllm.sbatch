@@ -141,6 +141,23 @@ while true; do
   fi
  done
 
+# 运行批处理前：导出 YOLO 助手相关参数（可在提交前覆盖这些变量）
+# 说明：这些值仅作为默认值，用户也可以在 sbatch 前 export 来覆盖它们。
+export YOLO_CONF="${YOLO_CONF:-0.10}"
+export YOLO_IOU="${YOLO_IOU:-0.60}"
+export YOLO_MIN_W="${YOLO_MIN_W:-24}"
+export YOLO_MIN_H="${YOLO_MIN_H:-24}"
+export YOLO_MIN_AREA_RATIO="${YOLO_MIN_AREA_RATIO:-0.003}"
+# 若未显式设置 YOLO_MODEL，优先使用服务器已下载的 yolov8n.pt 权重，否则走默认自动下载
+if [ -z "${YOLO_MODEL:-}" ]; then
+  YOLO_MODEL_PATH="/projects/_hdd/SeeGround/models/yolo/yolov8n.pt"
+  if [ -f "$YOLO_MODEL_PATH" ]; then
+    export YOLO_MODEL="$YOLO_MODEL_PATH"
+  else
+    export YOLO_MODEL="yolov8n.pt"
+  fi
+fi
+
 # 运行批处理（使用 vLLM）
 export VLLM_BASE_URL="${VLLM_BASE_URL}"
 python -u scripts/run_batch_airsim.py cluster/tasks_airsim_vllm.json
