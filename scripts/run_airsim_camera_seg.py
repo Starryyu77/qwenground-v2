@@ -89,23 +89,58 @@ def run(dataset_root: str,
         vllm_api_key: Optional[str] = None,
         vllm_model: str = "Qwen/Qwen2-VL-7B-Instruct",
         list_mode: bool = False,
-        yolo_assist: bool = False) -> None:
+        yolo_assist: bool = False,
+        image_path: Optional[str] = None) -> None:
     os.makedirs(output_dir, exist_ok=True)
 
     channel_substr = normalize_channel_for_filename(channel)
-    samples = collect_camera_samples(dataset_root, channel_substr=channel_substr, key_frame_only=True)
-    if not samples:
-        raise RuntimeError(f"未找到相机样本，channel='{channel_substr}'，请检查数据集路径与通道名称。")
 
-    if index < 0 or index >= len(samples):
-        raise IndexError(f"index 超出范围：{index}，可选范围 0~{len(samples)-1}")
-
-    sample = samples[index]
-    image_path = sample["filename"]
-
-    # 读图，确认尺寸
-    img = Image.open(image_path).convert("RGB")
-    w, h = img.size
+    # 若提供显式图像路径，则覆盖 channel/index 选择
+    if image_path is not None:
+        # 尝试从路径推断 CAMERA_* 通道名（用于结果记录）
+        try:
+            rel = os.path.relpath(image_path, dataset_root)
+            if rel.startswith("sweeps/"):
+                parts = rel.split("/")
+                if len(parts) >= 2:
+                    channel_substr = parts[1]  # 例如 CAMERA_LEFT_id_1
+        except Exception:
+            pass
+        # 构造 sample 信息，并尽力从 sample_data.json 补齐 token / calibrated_sensor_token / timestamp
+        sample = {
+            "token": None,
+            "filename": image_path,
+            "width": None,
+            "height": None,
+            "calibrated_sensor_token": None,
+            "timestamp": None,
+        }
+        img = Image.open(image_path).convert("RGB")
+        w, h = img.size
+        sample["width"], sample["height"] = w, h
+        try:
+            sd_path = os.path.join(dataset_root, META_DIRNAME, "sample_data.json")
+            sample_data = load_json(sd_path)
+            for it in sample_data:
+                f = os.path.join(dataset_root, it.get("filename", ""))
+                if os.path.abspath(f) == os.path.abspath(image_path):
+                    sample["token"] = it.get("token")
+                    sample["calibrated_sensor_token"] = it.get("calibrated_sensor_token")
+                    sample["timestamp"] = it.get("timestamp")
+                    break
+        except Exception:
+            pass
+    else:
+        samples = collect_camera_samples(dataset_root, channel_substr=channel_substr, key_frame_only=True)
+        if not samples:
+            raise RuntimeError(f"未找到相机样本，channel='{channel_substr}'，请检查数据集路径与通道名称。")
+        if index < 0 or index >= len(samples):
+            raise IndexError(f"index 超出范围：{index}，可选范围 0~{len(samples)-1}")
+        sample = samples[index]
+        image_path = sample["filename"]
+        # 读图，确认尺寸
+        img = Image.open(image_path).convert("RGB")
+        w, h = img.size
 
     # 若启用 YOLO 助手：先生成车类候选
     candidates: List[Dict[str, Any]] = []
@@ -256,6 +291,7 @@ if __name__ == "__main__":
     parser.add_argument("--list_mode", action="store_true", help="启用列表输出模式，模型返回 car_list，脚本自动选择最右侧")
     # 新增：YOLO 助手（在候选中由模型选择，不做任何兜底）
     parser.add_argument("--yolo_assist", action="store_true", help="启用 YOLO 候选 + LLM 选择模式（失败则直接退出）")
+    parser.add_argument("--image_path", default=None, help="显式指定图像路径（覆盖 channel/index 选择）")
 
     args = parser.parse_args()
     run(
@@ -277,4 +313,5 @@ if __name__ == "__main__":
         vllm_model=args.vllm_model,
         list_mode=args.list_mode,
         yolo_assist=args.yolo_assist,
+        image_path=args.image_path,
     )
