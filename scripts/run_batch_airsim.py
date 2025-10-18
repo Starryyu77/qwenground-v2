@@ -30,6 +30,8 @@ def main(tasks_path: str):
             vllm_base_url=t.get("vllm_base_url"),
             vllm_api_key=t.get("vllm_api_key"),
             vllm_model=t.get("vllm_model", "Qwen/Qwen2-VL-7B-Instruct"),
+            list_mode=bool(t.get("list_mode", False)),
+            yolo_assist=bool(t.get("yolo_assist", False)),
         )
 
 

@@ -21,9 +21,21 @@
     "dataset_root": "airsim_camera_seg",
     "channel": "CAM_BACK_id_0",
     "index": 1,
+    "prompt": "画面中最右侧的车辆。请返回所有汽车列表 car_list，并按中心 x 从小到大排序。",
+    "use_vllm": true,
+    "vllm_model": "Qwen/Qwen2-VL-7B-Instruct",
+    "output_dir": "outputs/airsim_back_rightmost_vllm_1",
+    "list_mode": true
+  }
+  ,
+  {
+    "dataset_root": "airsim_camera_seg",
+    "channel": "CAM_BACK_id_0",
+    "index": 1,
     "prompt": "画面中最右侧的车辆",
     "use_vllm": true,
     "vllm_model": "Qwen/Qwen2-VL-7B-Instruct",
-    "output_dir": "outputs/airsim_back_rightmost_vllm_1"
+    "output_dir": "outputs/airsim_back_rightmost_yolo_1",
+    "yolo_assist": true
   }
 ]

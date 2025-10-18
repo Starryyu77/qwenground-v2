@@ -11,6 +11,8 @@ sys.path.append(os.path.join(os.path.dirname(os.path.dirname(__file__)), "src"))
 
 from locator.vision import QwenVL2DDetector, QwenAPI2DDetector, VLLMOpenAI2DDetector
 from locator.io import overlay_bbox_on_image
+# 新增：YOLO 候选模块
+from locator.yolo import YOLOCandidateDetector
 
 
 META_DIRNAME = "v1.0-mini"
@@ -85,7 +87,9 @@ def run(dataset_root: str,
         use_vllm: bool = False,
         vllm_base_url: Optional[str] = None,
         vllm_api_key: Optional[str] = None,
-        vllm_model: str = "Qwen/Qwen2-VL-7B-Instruct") -> None:
+        vllm_model: str = "Qwen/Qwen2-VL-7B-Instruct",
+        list_mode: bool = False,
+        yolo_assist: bool = False) -> None:
     os.makedirs(output_dir, exist_ok=True)
 
     channel_substr = normalize_channel_for_filename(channel)
@@ -103,15 +107,54 @@ def run(dataset_root: str,
     img = Image.open(image_path).convert("RGB")
     w, h = img.size
 
-    # 构造更严格的提示，加入图像尺寸与坐标约束，避免仅框局部
-    final_prompt = (
-        f"{prompt}\n"
-        f"图像尺寸：宽 {w} 像素，高 {h} 像素。"
-        f"请输出该目标的完整 2D 边界框，bbox=[x1,y1,x2,y2]；坐标为整数，满足 0<=x1<x2<= {w-1}，0<=y1<y2<= {h-1}。"
-        "边界框需要尽量覆盖整个车辆外轮廓，不要只框局部或边角。"
-        "若不存在该目标，请仅输出 JSON：{{\"bbox\": [0,0,0,0], \"label\": \"none\"}}。"
-        "不要输出除 JSON 以外的任何字符。"
-    )
+    # 若启用 YOLO 助手：先生成车类候选
+    candidates: List[Dict[str, Any]] = []
+    if yolo_assist:
+        yolo = YOLOCandidateDetector(model_name=os.environ.get("YOLO_MODEL", "yolov8n.pt"), conf=float(os.environ.get("YOLO_CONF", 0.25)), iou=float(os.environ.get("YOLO_IOU", 0.45)))
+        candidates = yolo.detect_cars(image_path)
+        # 基于宽高/面积过滤过小框（严格按你的要求：不做兜底，若无有效候选则直接失败）
+        def _area(b: List[int]) -> int:
+            return max(0, b[2] - b[0]) * max(0, b[3] - b[1])
+        min_w, min_h = 24, 24
+        min_area = int(w * h * 0.003)
+        filtered = []
+        for c in candidates:
+            bw = c["bbox"][2] - c["bbox"][0]
+            bh = c["bbox"][3] - c["bbox"][1]
+            if bw >= min_w and bh >= min_h and _area(c["bbox"]) >= min_area:
+                filtered.append(c)
+        candidates = filtered
+        if not candidates:
+            raise RuntimeError("YOLO 未发现足够有效的车类候选，任务失败。")
+
+    # 构造提示：列表模式 或 单框模式 或 YOLO 候选选择模式
+    if yolo_assist:
+        # 向模型提供候选 id 及其 bbox，要求只能在候选中选择并原样返回所选 bbox
+        cand_desc = ", ".join([f"{{id:{c['id']}, bbox:[{c['bbox'][0]},{c['bbox'][1]},{c['bbox'][2]},{c['bbox'][3]}], conf:{c['conf']:.2f}}}" for c in candidates])
+        final_prompt = (
+            f"{prompt}\n"
+            f"图像尺寸：宽 {w} 像素，高 {h} 像素。候选车辆如下（只允许从候选中选择，不可自行创建或修改框）：[{cand_desc}]。\n"
+            f"请只输出一个 JSON 对象：{{\"bbox\": [x1,y1,x2,y2], \"label\": \"car\"}}，其中 bbox 必须严格等于所选候选的 bbox，且满足 0<=x1<x2<= {w-1}，0<=y1<y2<= {h-1}。\n"
+            "不要输出除 JSON 以外的任何字符。"
+        )
+    elif list_mode:
+        final_prompt = (
+            f"{prompt}\n"
+            f"图像尺寸：宽 {w} 像素，高 {h} 像素。"
+            "请识别图像中所有汽车，仅输出一个 JSON 对象："
+            "{\"car_list\": [{\"bbox\": [x1,y1,x2,y2], \"label\": \"car\"}, ...]}。"
+            f"要求：坐标为整数，满足 0<=x1<x2<= {w-1}，0<=y1<y2<= {h-1}；car_list 按边界框中心 x 从小到大排序（最右侧在最后）。"
+            "不要输出除 JSON 以外的任何字符。"
+        )
+    else:
+        final_prompt = (
+            f"{prompt}\n"
+            f"图像尺寸：宽 {w} 像素，高 {h} 像素。"
+            f"请输出该目标的完整 2D 边界框，bbox=[x1,y1,x2,y2]；坐标为整数，满足 0<=x1<x2<= {w-1}，0<=y1<y2<= {h-1}。"
+            "边界框需要尽量覆盖整个车辆外轮廓，不要只框局部或边角。"
+            "若不存在该目标，请仅输出 JSON：{\"bbox\": [0,0,0,0], \"label\": \"none\"}。"
+            "不要输出除 JSON 以外的任何字符。"
+        )
 
     # 加载相机内参（用于记录/调试）
     K_map = load_camera_intrinsic(dataset_root)
@@ -136,7 +179,10 @@ def run(dataset_root: str,
             verbose=False,
         )
     det = detector.detect(image_path, final_prompt)
-    bbox = det["bbox"]
+    bbox = det.get("bbox")
+    if not isinstance(bbox, (list, tuple)) or len(bbox) != 4:
+        raise RuntimeError("模型未返回有效的 bbox，任务失败。")
+
     # 边界裁剪，确保坐标合法
     def _clamp_bbox(b: Any, w: int, h: int) -> List[int]:
         x1, y1, x2, y2 = map(int, b)
@@ -150,27 +196,6 @@ def run(dataset_root: str,
             y1, y2 = y2, y1
         return [x1, y1, x2, y2]
     bbox = _clamp_bbox(bbox, w, h)
-
-    # 小框重试逻辑：若面积过小或宽高过小，强化提示重试一次
-    def _area(b: List[int]) -> int:
-        return max(0, b[2] - b[0]) * max(0, b[3] - b[1])
-    min_area = int(w * h * 0.003)  # 至少覆盖约 0.3% 图像面积
-    if _area(bbox) < min_area or (bbox[2] - bbox[0]) < 16 or (bbox[3] - bbox[1]) < 16:
-        retry_prompt = (
-            f"{prompt}\n"
-            f"图像尺寸：宽 {w} 像素，高 {h} 像素。"
-            f"请输出该目标（例如最右侧的车辆）的完整 2D 边界框，bbox=[x1,y1,x2,y2]；坐标为整数，满足 0<=x1<x2<= {w-1}，0<=y1<y2<= {h-1}。"
-            "务必覆盖完整车身，不要只框局部或边角；框的宽和高至少分别不小于 30 像素。"
-            "若不存在该目标，请仅输出 JSON：{\"bbox\": [0,0,0,0], \"label\": \"none\"}。"
-            "不要输出除 JSON 以外的任何字符。"
-        )
-        det_retry = detector.detect(image_path, retry_prompt)
-        bbox_retry = _clamp_bbox(det_retry.get("bbox", bbox), w, h)
-        # 若重试框面积更大，则采用重试结果
-        if _area(bbox_retry) > _area(bbox):
-            bbox = bbox_retry
-            det = det_retry
-            print("检测到初次框过小，已重试并采用更合理的框。")
 
     print(f"2D bbox: {bbox}, label: {det.get('label')}")
 
@@ -191,6 +216,9 @@ def run(dataset_root: str,
         "use_vllm": use_vllm,
         "vllm_model": vllm_model if use_vllm else None,
         "vllm_base_url": (vllm_base_url or os.environ.get("VLLM_BASE_URL") or "http://127.0.0.1:8000/v1") if use_vllm else None,
+        "list_mode": list_mode,
+        "yolo_assist": yolo_assist,
+        "yolo_candidates": candidates if yolo_assist else None,
     }
     with open(os.path.join(output_dir, "bbox2d.json"), "w", encoding="utf-8") as f:
         json.dump(result, f, ensure_ascii=False, indent=2)
@@ -217,6 +245,10 @@ if __name__ == "__main__":
     parser.add_argument("--vllm_base_url", default=None, help="vLLM 服务地址，例如 http://127.0.0.1:8000/v1，也可环境变量 VLLM_BASE_URL")
     parser.add_argument("--vllm_api_key", default=None, help="vLLM API Key（通常可留空，或用环境变量 VLLM_API_KEY）")
     parser.add_argument("--vllm_model", default="Qwen/Qwen2-VL-7B-Instruct", help="vLLM 服务器加载的模型名（需与服务端一致）")
+    # 新增：列表输出模式（让模型返回所有车辆列表，脚本自动选择最右侧）
+    parser.add_argument("--list_mode", action="store_true", help="启用列表输出模式，模型返回 car_list，脚本自动选择最右侧")
+    # 新增：YOLO 助手（在候选中由模型选择，不做任何兜底）
+    parser.add_argument("--yolo_assist", action="store_true", help="启用 YOLO 候选 + LLM 选择模式（失败则直接退出）")
 
     args = parser.parse_args()
     run(
@@ -236,4 +268,6 @@ if __name__ == "__main__":
         vllm_base_url=args.vllm_base_url,
         vllm_api_key=args.vllm_api_key,
         vllm_model=args.vllm_model,
+        list_mode=args.list_mode,
+        yolo_assist=args.yolo_assist,
     )
