@@ -55,31 +55,91 @@ class QwenVL2DDetector:
 
     @staticmethod
     def _force_json_bbox(text: str) -> Optional[Dict[str, Any]]:
-        """从模型输出文本中提取 JSON bbox（鲁棒解析）。"""
+        """从模型输出文本中提取 JSON bbox（鲁棒解析）。
+        支持：
+        - 单一 JSON：{"bbox": [...], "label": "..."}
+        - 列表 JSON：{"car_list"|"objects"|"bboxes"|"detections"|"boxes"|"items": [{"bbox": [...]}, ...]}，自动选择最右侧（按中心 x 最大）
+        - 纯列表：[ {"bbox": [...]}, ... ] 或 [x1,y1,x2,y2]
+        - 文本中多个 [x1,y1,x2,y2]，选择最右侧
+        """
+        import re, json
         text = text.strip()
-        # 优先解析 ```json ... ``` 或 ``` ... ``` 代码块中的 JSON
-        import re
-        m_fence = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", text, flags=re.S)
+
+        def _choose_rightmost_from_list(items: Any) -> Optional[Dict[str, Any]]:
+            best = None
+            best_cx = -1.0
+            if isinstance(items, list):
+                for it in items:
+                    if isinstance(it, dict) and "bbox" in it:
+                        b = it.get("bbox")
+                        if isinstance(b, (list, tuple)) and len(b) >= 4:
+                            try:
+                                x1, y1, x2, y2 = map(int, b[:4])
+                                cx = (x1 + x2) / 2.0
+                                if cx > best_cx:
+                                    best = {"bbox": [x1, y1, x2, y2], "label": it.get("label", "object")}
+                                    best_cx = cx
+                            except Exception:
+                                continue
+            return best
+
+        # 1) 代码块 JSON：```json ... ``` 或 ``` ... ```
+        m_fence = re.search(r"```(?:json)?\s*(\{.*?\}|\[.*?\])\s*```", text, flags=re.S)
         if m_fence:
             inner = m_fence.group(1)
             try:
                 obj = json.loads(inner)
-                if isinstance(obj, dict) and "bbox" in obj:
-                    return obj
+                if isinstance(obj, dict):
+                    if "bbox" in obj:
+                        return obj
+                    for key in ["car_list", "objects", "bboxes", "detections", "boxes", "items"]:
+                        items = obj.get(key)
+                        parsed = _choose_rightmost_from_list(items)
+                        if parsed is not None:
+                            return parsed
+                elif isinstance(obj, list):
+                    # 支持纯列表形式
+                    parsed = _choose_rightmost_from_list(obj)
+                    if parsed is not None:
+                        return parsed
             except Exception:
                 pass
-        # 直接 JSON
+
+        # 2) 直接 JSON
         try:
             obj = json.loads(text)
-            if isinstance(obj, dict) and "bbox" in obj:
-                return obj
+            if isinstance(obj, dict):
+                if "bbox" in obj:
+                    return obj
+                for key in ["car_list", "objects", "bboxes", "detections", "boxes", "items"]:
+                    items = obj.get(key)
+                    parsed = _choose_rightmost_from_list(items)
+                    if parsed is not None:
+                        return parsed
+            elif isinstance(obj, list):
+                parsed = _choose_rightmost_from_list(obj)
+                if parsed is not None:
+                    return parsed
         except Exception:
             pass
-        # 简单模式：查找类似 [x1, y1, x2, y2]
-        m = re.search(r"\[(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*\d+\s*)\]", text)
-        if m:
-            nums = [int(x) for x in m.group(1).split(',')]
-            return {"bbox": nums, "label": "object"}
+
+        # 3) 文本中出现的多个 [x1,y1,x2,y2]，选择最右侧
+        m_all = re.findall(r"\[(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*\d+\s*)\]", text)
+        if m_all:
+            best = None
+            best_cx = -1.0
+            for s in m_all:
+                try:
+                    nums = [int(x) for x in re.split(r"\s*,\s*", s.strip())]
+                    cx = (nums[0] + nums[2]) / 2.0
+                    if cx > best_cx:
+                        best = nums
+                        best_cx = cx
+                except Exception:
+                    continue
+            if best is not None:
+                return {"bbox": best, "label": "object"}
+
         return None
 
     def detect(self, image_path: str, prompt: str, max_tokens: int = 512) -> Dict[str, Any]:
